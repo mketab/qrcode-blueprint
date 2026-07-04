@@ -1,0 +1,30 @@
+name: Publish Factorio Mod
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Factorio Mod Uploader
+        uses: TheBrutalX/Factorio-mod-uploader-action@v2.0.6
+        with:
+          action: validate
+
+      - name: Factorio Mod Uploader
+        uses: TheBrutalX/Factorio-mod-uploader-action@v2.0.6
+        with:
+          action: compress
+          auto-update-version: 'true'
+
+      - name: Factorio Mod Uploader
+        uses: TheBrutalX/Factorio-mod-uploader-action@v2.0.6
+        with:
+          action: upload
+          factorio-api-key: ${{ secrets.FACTORIO_API_KEY }}
