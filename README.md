@@ -1,5 +1,7 @@
 # qrcode-blueprint
 
+_Mod Portal Link_: https://mods.factorio.com/mod/qrcode-blueprint
+
 A Factorio mod to create QR codes blueprints. 
 
 Useful for sharing links or other data directly on the map.
