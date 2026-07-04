@@ -108,12 +108,20 @@ local function generate_qr_blueprint(player, text)
   end
   
   local entity_name = "stone-wall"
+  local prototypes_entity = (_G.prototypes and _G.prototypes.entity) or game.entity_prototypes
   if settings and settings.global and settings.global["qr-pixel-entity"] then
     local setting_val = settings.global["qr-pixel-entity"].value
-    local prototypes_entity = (_G.prototypes and _G.prototypes.entity) or game.entity_prototypes
     if prototypes_entity and prototypes_entity[setting_val] then
       entity_name = setting_val
     end
+  end
+
+  local tile_width = 1
+  local tile_height = 1
+  local proto = prototypes_entity and prototypes_entity[entity_name]
+  if proto then
+    tile_width = proto.tile_width or 1
+    tile_height = proto.tile_height or 1
   end
   
   local entities = {}
@@ -124,8 +132,8 @@ local function generate_qr_blueprint(player, text)
   for x = 1, N do
     for y = 1, N do
       if tab[x][y] > 0 then
-        local px = x - half_N
-        local py = y - half_N
+        local px = (x - half_N) * tile_width + (tile_width / 2)
+        local py = (y - half_N) * tile_height + (tile_height / 2)
         
         table.insert(entities, {
           entity_number = entity_idx,
