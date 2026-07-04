@@ -1,0 +1,20 @@
+{
+  "name": "qrcode-blueprint",
+  "version": "1.0.0",
+  "title": "QR Code Blueprint Generator",
+  "author": "mketab",
+  "factorio_version": "2.0",
+  "dependencies": [
+    "base >= 2.0.0"
+  ],
+  "description": "Presents a text box to the user and creates a QR code blueprint made out of walls from the input text.",
+  
+  "expansion_required": false,
+  "quality_required": false,
+  "rail_bridges_required": false,
+  "space_travel_required": false,
+  "spoiling_required": false,
+  "freezing_required": false,
+  "segmented_units_required": false,
+  "expansion_shaders_required": false
+}
