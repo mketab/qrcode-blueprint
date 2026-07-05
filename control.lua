@@ -88,6 +88,15 @@ local function open_qr_gui(player)
   player.opened = frame
 end
 
+local function toggle_qr_gui(player)
+  local frame = player.gui.screen.qr_code_frame
+  if frame then
+    frame.destroy()
+  else
+    open_qr_gui(player)
+  end
+end
+
 local function generate_qr_blueprint(player, text)
   local ok, tab = qrencode.qrcode(text)
   if not ok then
@@ -155,8 +164,15 @@ script.on_event(defines.events.on_lua_shortcut, function(event)
   if event.prototype_name == "qr-code-shortcut" then
     local player = game.players[event.player_index]
     if player then
-      open_qr_gui(player)
+      toggle_qr_gui(player)
     end
+  end
+end)
+
+script.on_event("qr-code-hotkey", function(event)
+  local player = game.players[event.player_index]
+  if player then
+    toggle_qr_gui(player)
   end
 end)
 
