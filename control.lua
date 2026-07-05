@@ -184,25 +184,6 @@ script.on_event(defines.events.on_gui_click, function(event)
   end
 end)
 
-script.on_event(defines.events.on_gui_confirmed, function(event)
-  local element = event.element
-  if not (element and element.valid) then return end
-  
-  if element.name == "qr_text_box" then
-    local player = game.players[event.player_index]
-    local text = element.text
-    if text ~= "" then
-      generate_qr_blueprint(player, text)
-      local frame = player.gui.screen.qr_code_frame
-      if frame then
-        frame.destroy()
-      end
-    else
-      player.print("Please enter some text first.")
-    end
-  end
-end)
-
 script.on_event(defines.events.on_gui_closed, function(event)
   if event.element and event.element.valid and event.element.name == "qr_code_frame" then
     event.element.destroy()
