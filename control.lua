@@ -20,7 +20,7 @@ local function open_qr_gui(player)
   
   local label = titlebar.add{
     type = "label",
-    caption = "QR Code Blueprint Generator",
+    caption = {"qr-gui.window-title"},
     style = "frame_title"
   }
   label.ignored_by_interaction = true
@@ -53,7 +53,7 @@ local function open_qr_gui(player)
   
   content_frame.add{
     type = "label",
-    caption = "Enter text to encode as walls in a blueprint:"
+    caption = {"qr-gui.enter-text"}
   }
   
   local text_box = content_frame.add{
@@ -81,7 +81,7 @@ local function open_qr_gui(player)
   action_flow.add{
     type = "button",
     name = "qr_generate_button",
-    caption = "Generate QR Code",
+    caption = {"qr-gui.generate"},
     style = "confirm_button"
   }
   
@@ -100,19 +100,19 @@ end
 local function generate_qr_blueprint(player, text)
   local ok, tab = qrencode.qrcode(text)
   if not ok then
-    player.print("Error generating QR code: " .. tostring(tab))
+    player.print({"qr-gui.error-generating", tostring(tab)})
     return
   end
   
   player.clear_cursor()
   local cursor_stack = player.cursor_stack
   if not (cursor_stack and cursor_stack.valid) then
-    player.print("Failed to access cursor stack.")
+    player.print({"qr-gui.error-cursor"})
     return
   end
   
   if not cursor_stack.set_stack({name = "blueprint", count = 1}) then
-    player.print("Failed to place blueprint in cursor.")
+    player.print({"qr-gui.error-blueprint"})
     return
   end
   
@@ -157,7 +157,7 @@ local function generate_qr_blueprint(player, text)
   cursor_stack.set_blueprint_entities(entities)
   cursor_stack.label = "QR: " .. string.sub(text, 1, 30)
   
-  player.print("QR code blueprint created!")
+  player.print({"qr-gui.success"})
 end
 
 script.on_event(defines.events.on_lua_shortcut, function(event)
@@ -194,7 +194,7 @@ script.on_event(defines.events.on_gui_click, function(event)
         generate_qr_blueprint(player, text_box.text)
         frame.destroy()
       else
-        player.print("Please enter some text first.")
+        player.print({"qr-gui.error-no-text"})
       end
     end
   end
