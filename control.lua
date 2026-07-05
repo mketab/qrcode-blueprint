@@ -35,6 +35,51 @@ local function get_item_placed_size(item_name)
   return nil, nil
 end
 
+local function get_player_settings(player_index)
+  if not storage.player_settings then
+    storage.player_settings = {}
+  end
+  if not storage.player_settings[player_index] then
+    local default_fg = "stone-wall"
+    if settings and settings.global and settings.global["qr-pixel-entity"] then
+      local setting_val = settings.global["qr-pixel-entity"].value
+      if prototypes.item[setting_val] and is_valid_blueprint_item(setting_val) then
+        default_fg = setting_val
+      end
+    end
+    storage.player_settings[player_index] = {
+      foreground_item = default_fg,
+      background_item = nil,
+      scale = 1,
+      text = ""
+    }
+  end
+  return storage.player_settings[player_index]
+end
+
+local function save_player_settings(player, frame)
+  local settings = get_player_settings(player.index)
+  local content = frame.content_frame
+  if not content then return end
+  
+  local table_elem = content.settings_table
+  local text_box = content.qr_text_box
+  
+  if text_box then
+    settings.text = text_box.text
+  end
+  if table_elem then
+    if table_elem.qr_foreground_item then
+      settings.foreground_item = table_elem.qr_foreground_item.elem_value
+    end
+    if table_elem.qr_background_item then
+      settings.background_item = table_elem.qr_background_item.elem_value
+    end
+    if table_elem.qr_pixel_scale then
+      settings.scale = table_elem.qr_pixel_scale.selected_index
+    end
+  end
+end
 
 local function open_qr_gui(player)
   if player.gui.screen.qr_code_frame then
@@ -104,6 +149,26 @@ local function open_qr_gui(player)
   
   text_box.focus()
   
+  local settings = get_player_settings(player.index)
+  
+
+
+  if settings.foreground_item and not is_valid_blueprint_item(settings.foreground_item) then
+    settings.foreground_item = nil
+  end
+  if settings.background_item and not is_valid_blueprint_item(settings.background_item) then
+    settings.background_item = nil
+  end
+  if settings.foreground_item and settings.background_item then
+    local fg_w, fg_h = get_item_placed_size(settings.foreground_item)
+    local bg_w, bg_h = get_item_placed_size(settings.background_item)
+    if fg_w ~= bg_w or fg_h ~= bg_h then
+      settings.background_item = nil
+    end
+  end
+  
+  text_box.text = settings.text
+  
   local settings_table = content_frame.add{
     type = "table",
     name = "settings_table",
@@ -119,6 +184,7 @@ local function open_qr_gui(player)
     {filter = "place-as-tile", mode = "or"}
   }
   
+
   settings_table.add{
     type = "label",
     caption = {"qr-gui.foreground-item"}
@@ -129,16 +195,9 @@ local function open_qr_gui(player)
     elem_type = "item",
     elem_filters = item_filters
   }
+  btn_fg.elem_value = settings.foreground_item
   
-  local default_fg = "stone-wall"
-  if settings and settings.global and settings.global["qr-pixel-entity"] then
-    local setting_val = settings.global["qr-pixel-entity"].value
-    if prototypes.item[setting_val] and is_valid_blueprint_item(setting_val) then
-      default_fg = setting_val
-    end
-  end
-  btn_fg.elem_value = default_fg
-  
+
   settings_table.add{
     type = "label",
     caption = {"qr-gui.background-item"}
@@ -149,8 +208,9 @@ local function open_qr_gui(player)
     elem_type = "item",
     elem_filters = item_filters
   }
-  btn_bg.elem_value = nil
+  btn_bg.elem_value = settings.background_item
   
+
   settings_table.add{
     type = "label",
     caption = {"qr-gui.pixel-scale"}
@@ -159,7 +219,7 @@ local function open_qr_gui(player)
     type = "drop-down",
     name = "qr_pixel_scale",
     items = {"1x1", "2x2", "3x3", "4x4", "5x5"},
-    selected_index = 1
+    selected_index = settings.scale or 1
   }
   
   local action_flow = content_frame.add{
@@ -185,14 +245,18 @@ end
 local function toggle_qr_gui(player)
   local frame = player.gui.screen.qr_code_frame
   if frame then
+    save_player_settings(player, frame)
     frame.destroy()
   else
     open_qr_gui(player)
   end
 end
 
-local function generate_qr_blueprint(player, text, fg_item, bg_item, scale)
-  scale = scale or 1
+local function generate_qr_blueprint(player, settings)
+  local text = settings.text
+  local fg_item = settings.foreground_item
+  local bg_item = settings.background_item
+  local scale = settings.scale or 1
   
   if not (fg_item or bg_item) then
     player.print({"qr-gui.error-no-selection"})
@@ -241,6 +305,7 @@ local function generate_qr_blueprint(player, text, fg_item, bg_item, scale)
   local half_N = math.floor(N / 2)
   local entity_idx = 1
   
+
   local fg_type, fg_name
   if fg_item then
     local proto = prototypes.item[fg_item]
@@ -344,6 +409,14 @@ local function generate_qr_blueprint(player, text, fg_item, bg_item, scale)
   player.print({"qr-gui.success"})
 end
 
+script.on_init(function()
+  storage.player_settings = {}
+end)
+
+script.on_configuration_changed(function()
+  storage.player_settings = storage.player_settings or {}
+end)
+
 script.on_event(defines.events.on_lua_shortcut, function(event)
   if event.prototype_name == "qr-code-shortcut" then
     local player = game.players[event.player_index]
@@ -366,21 +439,20 @@ script.on_event(defines.events.on_gui_click, function(event)
   
   if element.name == "qr_close_button" then
     local player = game.players[event.player_index]
-    if player.gui.screen.qr_code_frame then
-      player.gui.screen.qr_code_frame.destroy()
+    local frame = player.gui.screen.qr_code_frame
+    if frame then
+      save_player_settings(player, frame)
+      frame.destroy()
     end
   elseif element.name == "qr_generate_button" then
     local player = game.players[event.player_index]
     local frame = player.gui.screen.qr_code_frame
     if frame then
       local text_box = frame.content_frame.qr_text_box
-      local settings_table = frame.content_frame.settings_table
       if text_box and text_box.text ~= "" then
-        local fg_item = settings_table and settings_table.qr_foreground_item and settings_table.qr_foreground_item.elem_value
-        local bg_item = settings_table and settings_table.qr_background_item and settings_table.qr_background_item.elem_value
-        local scale_dropdown = settings_table and settings_table.qr_pixel_scale
-        local scale = scale_dropdown and scale_dropdown.selected_index or 1
-        generate_qr_blueprint(player, text_box.text, fg_item, bg_item, scale)
+        save_player_settings(player, frame)
+        local settings = get_player_settings(player.index)
+        generate_qr_blueprint(player, settings)
         frame.destroy()
       else
         player.print({"qr-gui.error-no-text"})
@@ -391,6 +463,10 @@ end)
 
 script.on_event(defines.events.on_gui_closed, function(event)
   if event.element and event.element.valid and event.element.name == "qr_code_frame" then
+    local player = game.players[event.player_index]
+    if player then
+      save_player_settings(player, event.element)
+    end
     event.element.destroy()
   end
 end)
