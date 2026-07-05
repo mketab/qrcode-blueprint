@@ -151,6 +151,17 @@ local function open_qr_gui(player)
   }
   btn_bg.elem_value = nil
   
+  settings_table.add{
+    type = "label",
+    caption = {"qr-gui.pixel-scale"}
+  }
+  settings_table.add{
+    type = "drop-down",
+    name = "qr_pixel_scale",
+    items = {"1x1", "2x2", "3x3", "4x4", "5x5"},
+    selected_index = 1
+  }
+  
   local action_flow = content_frame.add{
     type = "flow",
     direction = "horizontal"
@@ -180,8 +191,8 @@ local function toggle_qr_gui(player)
   end
 end
 
-local function generate_qr_blueprint(player, text, fg_item, bg_item)
-  local scale = 1
+local function generate_qr_blueprint(player, text, fg_item, bg_item, scale)
+  scale = scale or 1
   
   if not (fg_item or bg_item) then
     player.print({"qr-gui.error-no-selection"})
@@ -367,7 +378,9 @@ script.on_event(defines.events.on_gui_click, function(event)
       if text_box and text_box.text ~= "" then
         local fg_item = settings_table and settings_table.qr_foreground_item and settings_table.qr_foreground_item.elem_value
         local bg_item = settings_table and settings_table.qr_background_item and settings_table.qr_background_item.elem_value
-        generate_qr_blueprint(player, text_box.text, fg_item, bg_item)
+        local scale_dropdown = settings_table and settings_table.qr_pixel_scale
+        local scale = scale_dropdown and scale_dropdown.selected_index or 1
+        generate_qr_blueprint(player, text_box.text, fg_item, bg_item, scale)
         frame.destroy()
       else
         player.print({"qr-gui.error-no-text"})
