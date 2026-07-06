@@ -742,7 +742,7 @@ function qrdecode.decode(grid, possible_fg_values)
 							-- 90 degrees clockwise (TR, BR, TL) -> needs 90 deg CCW rotation to align
 							for i = 1, N do
 								for j = 1, N do
-									aligned_tab[i][j] = tab[j][N - i + 1]
+									aligned_tab[i][j] = tab[N - j + 1][i]
 								end
 							end
 						elseif has_br and has_bl and has_tr then
@@ -756,7 +756,7 @@ function qrdecode.decode(grid, possible_fg_values)
 							-- 270 degrees clockwise (BL, TL, BR) -> needs 90 deg CW rotation to align
 							for i = 1, N do
 								for j = 1, N do
-									aligned_tab[i][j] = tab[N - j + 1][i]
+									aligned_tab[i][j] = tab[j][N - i + 1]
 								end
 							end
 						end
