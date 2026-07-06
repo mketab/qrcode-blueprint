@@ -697,6 +697,7 @@ script.on_event(defines.events.on_player_selected_area, function(event)
       open_decoded_gui(player, result)
     else
       player.print({"qr-gui.error-no-qrcode-found"})
+      open_qr_gui(player)
     end
   end
 end)
