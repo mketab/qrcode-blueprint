@@ -21,7 +21,7 @@ jobs:
         uses: TheBrutalX/Factorio-mod-uploader-action@v2.0.6
         with:
           action: compress
-          auto-update-version: 'true'
+          auto-update-version: ${{ github.event_name == 'release' }}
 
       - name: Factorio Mod Uploader
         uses: TheBrutalX/Factorio-mod-uploader-action@v2.0.6
