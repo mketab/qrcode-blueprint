@@ -1,4 +1,5 @@
 local qrencode = require("__qrcode-blueprint__.qrencode")
+local qrdecode = require("__qrcode-blueprint__.qrdecode")
 
 local function is_valid_blueprint_item(item_name)
   if not item_name then return true end
@@ -234,6 +235,13 @@ local function open_qr_gui(player)
   
   action_flow.add{
     type = "button",
+    name = "qr_decode_button",
+    caption = {"qr-gui.decode-map"},
+    style = "back_button"
+  }
+  
+  action_flow.add{
+    type = "button",
     name = "qr_generate_button",
     caption = {"qr-gui.generate"},
     style = "confirm_button"
@@ -444,6 +452,19 @@ script.on_event(defines.events.on_gui_click, function(event)
       save_player_settings(player, frame)
       frame.destroy()
     end
+  elseif element.name == "qr_decode_button" then
+    local player = game.players[event.player_index]
+    local frame = player.gui.screen.qr_code_frame
+    if frame then
+      save_player_settings(player, frame)
+      frame.destroy()
+    end
+    -- Give player the selection tool
+    player.clear_cursor()
+    local cursor_stack = player.cursor_stack
+    if cursor_stack and cursor_stack.valid then
+      cursor_stack.set_stack({name = "qr-decoder-tool", count = 1})
+    end
   elseif element.name == "qr_generate_button" then
     local player = game.players[event.player_index]
     local frame = player.gui.screen.qr_code_frame
@@ -458,16 +479,26 @@ script.on_event(defines.events.on_gui_click, function(event)
         player.print({"qr-gui.error-no-text"})
       end
     end
+  elseif element.name == "qr_decoded_close_button" then
+    local player = game.players[event.player_index]
+    local frame = player.gui.screen.qr_decoded_frame
+    if frame then
+      frame.destroy()
+    end
   end
 end)
 
 script.on_event(defines.events.on_gui_closed, function(event)
-  if event.element and event.element.valid and event.element.name == "qr_code_frame" then
-    local player = game.players[event.player_index]
-    if player then
-      save_player_settings(player, event.element)
+  if event.element and event.element.valid then
+    if event.element.name == "qr_code_frame" then
+      local player = game.players[event.player_index]
+      if player then
+        save_player_settings(player, event.element)
+      end
+      event.element.destroy()
+    elseif event.element.name == "qr_decoded_frame" then
+      event.element.destroy()
     end
-    event.element.destroy()
   end
 end)
 
@@ -519,6 +550,153 @@ script.on_event(defines.events.on_gui_elem_changed, function(event)
           element.elem_value = nil
         end
       end
+    end
+  end
+end)
+
+local function open_decoded_gui(player, text)
+  if player.gui.screen.qr_decoded_frame then
+    player.gui.screen.qr_decoded_frame.destroy()
+  end
+  
+  local frame = player.gui.screen.add{
+    type = "frame",
+    name = "qr_decoded_frame",
+    direction = "vertical"
+  }
+  frame.auto_center = true
+  
+  local titlebar = frame.add{
+    type = "flow",
+    direction = "horizontal",
+    name = "titlebar"
+  }
+  
+  local label = titlebar.add{
+    type = "label",
+    caption = {"qr-gui.decoded-title"},
+    style = "frame_title"
+  }
+  label.ignored_by_interaction = true
+  
+  local filler = titlebar.add{
+    type = "empty-widget",
+    style = "draggable_space_header"
+  }
+  filler.style.horizontally_stretchable = true
+  filler.style.vertically_stretchable = true
+  filler.style.height = 24
+  filler.drag_target = frame
+  
+  titlebar.add{
+    type = "sprite-button",
+    name = "qr_decoded_close_button",
+    style = "frame_action_button",
+    sprite = "utility/close",
+    hovered_sprite = "utility/close_black",
+    clicked_sprite = "utility/close_black"
+  }
+  
+  local content_frame = frame.add{
+    type = "frame",
+    name = "content_frame",
+    direction = "vertical",
+    style = "inside_deep_frame"
+  }
+  content_frame.style.padding = 12
+  
+  local text_box = content_frame.add{
+    type = "text-box",
+    name = "qr_decoded_text_box",
+    text = text
+  }
+  text_box.style.width = 350
+  text_box.style.height = 150
+  text_box.style.top_margin = 4
+  text_box.style.bottom_margin = 12
+  text_box.read_only = true
+  
+  local action_flow = content_frame.add{
+    type = "flow",
+    direction = "horizontal"
+  }
+  
+  local action_filler = action_flow.add{
+    type = "empty-widget"
+  }
+  action_filler.style.horizontally_stretchable = true
+  
+  action_flow.add{
+    type = "button",
+    name = "qr_decoded_close_button",
+    caption = {"qr-gui.close"},
+    style = "confirm_button"
+  }
+  
+  player.opened = frame
+end
+
+script.on_event(defines.events.on_player_selected_area, function(event)
+  if event.item == "qr-decoder-tool" then
+    local player = game.players[event.player_index]
+    if not player then return end
+    
+    local surface = player.surface
+    local area = event.area
+    
+    -- Get integer coordinates of selection
+    local x_min = math.floor(area.left_top.x)
+    local x_max = math.floor(area.right_bottom.x)
+    local y_min = math.floor(area.left_top.y)
+    local y_max = math.floor(area.right_bottom.y)
+    
+    -- Scan the area tile by tile
+    local grid = {}
+    for x = x_min, x_max do
+      grid[x] = {}
+      for y = y_min, y_max do
+        grid[x][y] = "" -- default background/empty
+      end
+    end
+    
+    -- Process entities in selection
+    for _, ent in ipairs(event.entities) do
+      if ent.valid then
+        local pos_x = math.floor(ent.position.x)
+        local pos_y = math.floor(ent.position.y)
+        if grid[pos_x] and grid[pos_x][pos_y] then
+          if ent.prototype.has_flag("player-creation") and not ent.prototype.has_flag("not-blueprintable") then
+            grid[pos_x][pos_y] = ent.name
+          end
+        end
+      end
+    end
+    
+    -- Process tiles in selection
+    for x = x_min, x_max do
+      for y = y_min, y_max do
+        if grid[x][y] == "" then
+          local tile = surface.get_tile(x, y)
+          if tile and tile.valid then
+            local name = tile.name
+            if name:find("concrete") or name:find("path") or name:find("brick") or name:find("asphalt") or name:find("floor") or name:find("tile") then
+              grid[x][y] = name
+            end
+          end
+        end
+      end
+    end
+    
+    -- Call the decoder
+    local ok, result = qrdecode.decode(grid)
+    
+    -- Clear the custom selection tool from the cursor
+    player.clear_cursor()
+    
+    if ok then
+      open_decoded_gui(player, result)
+    else
+      player.print({"qr-gui.error-no-qrcode-found"})
     end
   end
 end)
