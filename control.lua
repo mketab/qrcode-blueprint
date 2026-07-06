@@ -42,12 +42,6 @@ local function get_player_settings(player_index)
   end
   if not storage.player_settings[player_index] then
     local default_fg = "stone-wall"
-    if settings and settings.global and settings.global["qr-pixel-entity"] then
-      local setting_val = settings.global["qr-pixel-entity"].value
-      if prototypes.item[setting_val] and is_valid_blueprint_item(setting_val) then
-        default_fg = setting_val
-      end
-    end
     storage.player_settings[player_index] = {
       foreground_item = default_fg,
       background_item = nil,
