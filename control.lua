@@ -361,16 +361,21 @@ local function generate_qr_blueprint(player, settings)
   
   if not (fg_item or bg_item) then
     player.print({"qr-gui.error-no-selection"})
-    return
+    return false
+  end
+  
+  if bg_item and not fg_item then
+    player.print({"qr-gui.error-only-background"})
+    return false
   end
   
   if fg_item and not is_valid_blueprint_item(fg_item) then
     player.print({"qr-gui.error-invalid-item", fg_item})
-    return
+    return false
   end
   if bg_item and not is_valid_blueprint_item(bg_item) then
     player.print({"qr-gui.error-invalid-item", bg_item})
-    return
+    return false
   end
   
   if fg_item and bg_item then
@@ -378,26 +383,26 @@ local function generate_qr_blueprint(player, settings)
     local bg_w, bg_h = get_item_placed_size(bg_item)
     if fg_w ~= bg_w or fg_h ~= bg_h then
       player.print({"qr-gui.error-size-mismatch", string.format("%dx%d", fg_w, fg_h), string.format("%dx%d", bg_w, bg_h)})
-      return
+      return false
     end
   end
   
   local ok, tab = qrencode.qrcode(text)
   if not ok then
     player.print({"qr-gui.error-generating", tostring(tab)})
-    return
+    return false
   end
   
   player.clear_cursor()
   local cursor_stack = player.cursor_stack
   if not (cursor_stack and cursor_stack.valid) then
     player.print({"qr-gui.error-cursor"})
-    return
+    return false
   end
   
   if not cursor_stack.set_stack({name = "blueprint", count = 1}) then
     player.print({"qr-gui.error-blueprint"})
-    return
+    return false
   end
   
   local entities = {}
@@ -517,6 +522,7 @@ local function generate_qr_blueprint(player, settings)
   
   cursor_stack.label = "QR: " .. string.sub(text, 1, 30)
   player.print({"qr-gui.success"})
+  return true
 end
 
 script.on_init(function()
@@ -575,8 +581,11 @@ script.on_event(defines.events.on_gui_click, function(event)
       if text_box and text_box.text ~= "" then
         save_player_settings(player, frame)
         local settings = get_player_settings(player.index)
-        generate_qr_blueprint(player, settings)
+        local success = generate_qr_blueprint(player, settings)
         frame.destroy()
+        if not success then
+          open_qr_gui(player)
+        end
       else
         player.print({"qr-gui.error-no-text"})
       end
