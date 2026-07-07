@@ -120,6 +120,56 @@ local function save_player_settings(player, frame)
   end
 end
 
+local function get_current_tile_size(table_elem)
+  if not table_elem then return 1 end
+  local fg_w = 1
+  if table_elem.qr_foreground_item and table_elem.qr_foreground_item.elem_value then
+    fg_w = get_item_placed_size(table_elem.qr_foreground_item.elem_value) or 1
+  end
+  local bg_w = 1
+  if table_elem.qr_background_item and table_elem.qr_background_item.elem_value then
+    bg_w = get_item_placed_size(table_elem.qr_background_item.elem_value) or 1
+  end
+  return math.max(fg_w, bg_w)
+end
+
+local function update_pixel_scale_dropdown(table_elem, initial_scale)
+  local dropdown = table_elem.qr_pixel_scale
+  if not (dropdown and dropdown.valid) then return end
+  
+  local tile_size = get_current_tile_size(table_elem)
+  
+  -- Calculate items to show based on tile size
+  local items = {}
+  local max_scale = 1
+  if tile_size == 1 then
+    max_scale = 5
+  elseif tile_size == 2 then
+    max_scale = 2
+  elseif tile_size == 3 then
+    max_scale = 2
+  elseif tile_size == 4 then
+    max_scale = 1
+  else
+    max_scale = 1
+  end
+  
+  for s = 1, max_scale do
+    table.insert(items, string.format("%dx%d", s, s))
+  end
+  
+  dropdown.items = items
+  
+  local target_index = initial_scale or dropdown.selected_index or 1
+  if target_index > max_scale then
+    target_index = max_scale
+  end
+  if target_index < 1 then
+    target_index = 1
+  end
+  dropdown.selected_index = target_index
+end
+
 local function open_qr_gui(player)
   if player.gui.screen.qr_code_frame then
     player.gui.screen.qr_code_frame.destroy()
@@ -259,8 +309,9 @@ local function open_qr_gui(player)
     type = "drop-down",
     name = "qr_pixel_scale",
     items = {"1x1", "2x2", "3x3", "4x4", "5x5"},
-    selected_index = settings.scale or 1
+    selected_index = 1
   }
+  update_pixel_scale_dropdown(settings_table, settings.scale or 1)
   
   local action_flow = content_frame.add{
     type = "flow",
@@ -569,6 +620,7 @@ script.on_event(defines.events.on_gui_elem_changed, function(event)
         if bg_btn and bg_btn.valid then
           bg_btn.elem_filters = get_item_filters_for_size(nil, nil)
         end
+        update_pixel_scale_dropdown(table_elem)
         return
       end
       
@@ -591,6 +643,7 @@ script.on_event(defines.events.on_gui_elem_changed, function(event)
         bg_btn.elem_filters = get_item_filters_for_size(nil, nil)
       end
     end
+    update_pixel_scale_dropdown(table_elem)
     
   elseif element.name == "qr_background_item" then
     local val = element.elem_value
@@ -604,6 +657,7 @@ script.on_event(defines.events.on_gui_elem_changed, function(event)
         if fg_btn and fg_btn.valid then
           fg_btn.elem_filters = get_item_filters_for_size(nil, nil)
         end
+        update_pixel_scale_dropdown(table_elem)
         return
       end
       
@@ -626,6 +680,7 @@ script.on_event(defines.events.on_gui_elem_changed, function(event)
         fg_btn.elem_filters = get_item_filters_for_size(nil, nil)
       end
     end
+    update_pixel_scale_dropdown(table_elem)
   end
 end)
 
