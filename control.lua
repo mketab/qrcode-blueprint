@@ -11,6 +11,9 @@ local function is_valid_blueprint_item(item_name)
     if ent_proto.tile_width ~= ent_proto.tile_height then
       return false
     end
+    if ent_proto.type == "mining-drill" or ent_proto.type == "offshore-pump" then
+      return false
+    end
     return ent_proto.has_flag("player-creation") and not ent_proto.has_flag("not-blueprintable")
   end
   
