@@ -55,18 +55,92 @@ local function get_item_placed_size(item_name)
   return nil, nil
 end
 
-local function get_item_filters_for_size(w, h)
-  if not w or not h then
-    return {
-      {filter = "name", name = get_valid_blueprint_items()}
-    }
+local function normalize_color(color)
+  if not color then return nil end
+  local r = color.r or color[1] or 0
+  local g = color.g or color[2] or 0
+  local b = color.b or color[3] or 0
+  local a = color.a or color[4] or 1
+  
+  if r > 1 or g > 1 or b > 1 or a > 1 then
+    r = r / 255
+    g = g / 255
+    b = b / 255
+    a = a / 255
+  end
+  return {r = r, g = g, b = b, a = a}
+end
+
+local function get_item_map_color(item_name)
+  if not item_name then return nil end
+  local proto = prototypes.item[item_name]
+  if not proto then return nil end
+  
+  if proto.place_result then
+    local ent_proto = proto.place_result
+    return ent_proto.friendly_map_color or ent_proto.map_color
+  elseif proto.place_as_tile_result then
+    local tile_proto = proto.place_as_tile_result.result
+    return tile_proto and tile_proto.map_color
+  end
+  return nil
+end
+
+local function are_items_too_similar(fg_item, bg_item)
+  if not fg_item or not bg_item then return false end
+  local fg_proto = prototypes.item[fg_item]
+  local bg_proto = prototypes.item[bg_item]
+  if not fg_proto or not bg_proto then return false end
+  
+  local fg_is_tile = not not fg_proto.place_as_tile_result
+  local bg_is_tile = not not bg_proto.place_as_tile_result
+  
+  if fg_item == bg_item then return true end
+  
+  if fg_is_tile == bg_is_tile then
+    if fg_is_tile then
+      local fg_tile = fg_proto.place_as_tile_result.result
+      local bg_tile = bg_proto.place_as_tile_result.result
+      if fg_tile and bg_tile and fg_tile.name == bg_tile.name then
+        return true
+      end
+    else
+      local fg_ent = fg_proto.place_result
+      local bg_ent = bg_proto.place_result
+      if fg_ent and bg_ent and fg_ent.type == bg_ent.type then
+        return true
+      end
+    end
   end
   
+  local fg_color = normalize_color(get_item_map_color(fg_item))
+  local bg_color = normalize_color(get_item_map_color(bg_item))
+  
+  if fg_color and bg_color then
+    local dist = math.sqrt((fg_color.r - bg_color.r)^2 + (fg_color.g - bg_color.g)^2 + (fg_color.b - bg_color.b)^2)
+    if dist < 0.15 then
+      return true
+    end
+  elseif not fg_is_tile and not bg_is_tile and not fg_color and not bg_color then
+    return true
+  end
+  
+  return false
+end
+
+local function get_item_filters_for_size(w, h, other_item_name)
   local list = {}
-  for name, _ in pairs(prototypes.item) do
-    if is_valid_blueprint_item(name) then
+  local base_list = get_valid_blueprint_items()
+  
+  for _, name in ipairs(base_list) do
+    local match_size = true
+    if w and h then
       local item_w, item_h = get_item_placed_size(name)
-      if item_w == w and item_h == h then
+      match_size = (item_w == w and item_h == h)
+    end
+    
+    if match_size then
+      if not other_item_name or not are_items_too_similar(name, other_item_name) then
         table.insert(list, name)
       end
     end
@@ -254,7 +328,7 @@ local function open_qr_gui(player)
   if settings.foreground_item and settings.background_item then
     local fg_w, fg_h = get_item_placed_size(settings.foreground_item)
     local bg_w, bg_h = get_item_placed_size(settings.background_item)
-    if fg_w ~= bg_w or fg_h ~= bg_h then
+    if fg_w ~= bg_w or fg_h ~= bg_h or are_items_too_similar(settings.foreground_item, settings.background_item) then
       settings.background_item = nil
     end
   end
@@ -274,8 +348,8 @@ local function open_qr_gui(player)
   local fg_w, fg_h = get_item_placed_size(settings.foreground_item)
   local bg_w, bg_h = get_item_placed_size(settings.background_item)
   
-  local fg_filters = get_item_filters_for_size(bg_w, bg_h)
-  local bg_filters = get_item_filters_for_size(fg_w, fg_h)
+  local fg_filters = get_item_filters_for_size(bg_w, bg_h, settings.background_item)
+  local bg_filters = get_item_filters_for_size(fg_w, fg_h, settings.foreground_item)
   
 
   settings_table.add{
@@ -383,6 +457,10 @@ local function generate_qr_blueprint(player, settings)
     local bg_w, bg_h = get_item_placed_size(bg_item)
     if fg_w ~= bg_w or fg_h ~= bg_h then
       player.print({"qr-gui.error-size-mismatch", string.format("%dx%d", fg_w, fg_h), string.format("%dx%d", bg_w, bg_h)})
+      return false
+    end
+    if are_items_too_similar(fg_item, bg_item) then
+      player.print({"qr-gui.error-too-similar", prototypes.item[fg_item].localised_name, prototypes.item[bg_item].localised_name})
       return false
     end
   end
@@ -630,7 +708,7 @@ script.on_event(defines.events.on_gui_elem_changed, function(event)
         player.print({"qr-gui.error-invalid-item", val})
         element.elem_value = nil
         if bg_btn and bg_btn.valid then
-          bg_btn.elem_filters = get_item_filters_for_size(nil, nil)
+          bg_btn.elem_filters = get_item_filters_for_size(nil, nil, nil)
         end
         update_pixel_scale_dropdown(table_elem)
         return
@@ -638,7 +716,7 @@ script.on_event(defines.events.on_gui_elem_changed, function(event)
       
       local fg_w, fg_h = get_item_placed_size(val)
       if bg_btn and bg_btn.valid then
-        bg_btn.elem_filters = get_item_filters_for_size(fg_w, fg_h)
+        bg_btn.elem_filters = get_item_filters_for_size(fg_w, fg_h, val)
         
         local bg_val = bg_btn.elem_value
         if bg_val then
@@ -646,13 +724,17 @@ script.on_event(defines.events.on_gui_elem_changed, function(event)
           if fg_w ~= bg_w or fg_h ~= bg_h then
             player.print({"qr-gui.error-size-mismatch", string.format("%dx%d", fg_w, fg_h), string.format("%dx%d", bg_w, bg_h)})
             element.elem_value = nil
-            bg_btn.elem_filters = get_item_filters_for_size(nil, nil)
+            bg_btn.elem_filters = get_item_filters_for_size(nil, nil, nil)
+          elseif are_items_too_similar(val, bg_val) then
+            player.print({"qr-gui.error-too-similar", prototypes.item[val].localised_name, prototypes.item[bg_val].localised_name})
+            element.elem_value = nil
+            bg_btn.elem_filters = get_item_filters_for_size(nil, nil, nil)
           end
         end
       end
     else
       if bg_btn and bg_btn.valid then
-        bg_btn.elem_filters = get_item_filters_for_size(nil, nil)
+        bg_btn.elem_filters = get_item_filters_for_size(nil, nil, nil)
       end
     end
     update_pixel_scale_dropdown(table_elem)
@@ -667,7 +749,7 @@ script.on_event(defines.events.on_gui_elem_changed, function(event)
         player.print({"qr-gui.error-invalid-item", val})
         element.elem_value = nil
         if fg_btn and fg_btn.valid then
-          fg_btn.elem_filters = get_item_filters_for_size(nil, nil)
+          fg_btn.elem_filters = get_item_filters_for_size(nil, nil, nil)
         end
         update_pixel_scale_dropdown(table_elem)
         return
@@ -675,7 +757,7 @@ script.on_event(defines.events.on_gui_elem_changed, function(event)
       
       local bg_w, bg_h = get_item_placed_size(val)
       if fg_btn and fg_btn.valid then
-        fg_btn.elem_filters = get_item_filters_for_size(bg_w, bg_h)
+        fg_btn.elem_filters = get_item_filters_for_size(bg_w, bg_h, val)
         
         local fg_val = fg_btn.elem_value
         if fg_val then
@@ -683,13 +765,17 @@ script.on_event(defines.events.on_gui_elem_changed, function(event)
           if fg_w ~= bg_w or fg_h ~= bg_h then
             player.print({"qr-gui.error-size-mismatch", string.format("%dx%d", bg_w, bg_h), string.format("%dx%d", fg_w, fg_h)})
             element.elem_value = nil
-            fg_btn.elem_filters = get_item_filters_for_size(nil, nil)
+            fg_btn.elem_filters = get_item_filters_for_size(nil, nil, nil)
+          elseif are_items_too_similar(val, fg_val) then
+            player.print({"qr-gui.error-too-similar", prototypes.item[val].localised_name, prototypes.item[fg_val].localised_name})
+            element.elem_value = nil
+            fg_btn.elem_filters = get_item_filters_for_size(nil, nil, nil)
           end
         end
       end
     else
       if fg_btn and fg_btn.valid then
-        fg_btn.elem_filters = get_item_filters_for_size(nil, nil)
+        fg_btn.elem_filters = get_item_filters_for_size(nil, nil, nil)
       end
     end
     update_pixel_scale_dropdown(table_elem)
