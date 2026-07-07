@@ -4,7 +4,7 @@ local qrdecode = require("__qrcode-blueprint__.qrdecode")
 local function is_valid_blueprint_item(item_name)
   if not item_name then return true end
   local proto = prototypes.item[item_name]
-  if not proto then return false end
+  if not proto or proto.hidden then return false end
   
   if proto.place_result then
     local ent_proto = proto.place_result
@@ -176,7 +176,9 @@ local function open_qr_gui(player)
   
   local item_filters = {
     {filter = "place-result"},
-    {filter = "place-as-tile", mode = "or"}
+    {filter = "hidden", invert = true, mode = "and"},
+    {filter = "place-as-tile", mode = "or"},
+    {filter = "hidden", invert = true, mode = "and"}
   }
   
 
