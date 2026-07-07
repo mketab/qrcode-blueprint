@@ -520,13 +520,7 @@ function qrdecode.decode_matrix(tab)
 	local raw_bits = read_bitstream(tab, version, mask)
 	local raw_codewords = bits_to_bytes(raw_bits)
 	
-	-- Look up expected block count and total sizes
-	local blocks = ecblocks[version][ec_level]
-	local expected_codewords = 0
-	for i = 1, #blocks / 2 do
-		expected_codewords = expected_codewords + blocks[2*i - 1] * blocks[2*i][1]
-	end
-	
+
 	-- Deinterleave codewords into blocks
 	local block_structs = deinterleave(raw_codewords, version, ec_level)
 	local clean_data_bits = {}
