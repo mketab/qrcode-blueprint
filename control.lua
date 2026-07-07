@@ -8,6 +8,9 @@ local function is_valid_blueprint_item(item_name)
   
   if proto.place_result then
     local ent_proto = proto.place_result
+    if ent_proto.tile_width ~= ent_proto.tile_height then
+      return false
+    end
     return ent_proto.has_flag("player-creation") and not ent_proto.has_flag("not-blueprintable")
   end
   
@@ -17,6 +20,19 @@ local function is_valid_blueprint_item(item_name)
   end
   
   return false
+end
+
+local valid_blueprint_items = nil
+local function get_valid_blueprint_items()
+  if not valid_blueprint_items then
+    valid_blueprint_items = {}
+    for name, _ in pairs(prototypes.item) do
+      if is_valid_blueprint_item(name) then
+        table.insert(valid_blueprint_items, name)
+      end
+    end
+  end
+  return valid_blueprint_items
 end
 
 local function get_item_placed_size(item_name)
@@ -34,6 +50,34 @@ local function get_item_placed_size(item_name)
   end
   
   return nil, nil
+end
+
+local function get_item_filters_for_size(w, h)
+  if not w or not h then
+    return {
+      {filter = "name", name = get_valid_blueprint_items()}
+    }
+  end
+  
+  local list = {}
+  for name, _ in pairs(prototypes.item) do
+    if is_valid_blueprint_item(name) then
+      local item_w, item_h = get_item_placed_size(name)
+      if item_w == w and item_h == h then
+        table.insert(list, name)
+      end
+    end
+  end
+  
+  if #list == 0 then
+    return {
+      {filter = "name", name = {}}
+    }
+  end
+  
+  return {
+    {filter = "name", name = list}
+  }
 end
 
 local function get_player_settings(player_index)
@@ -174,12 +218,11 @@ local function open_qr_gui(player)
   settings_table.style.vertical_spacing = 8
   settings_table.style.horizontal_spacing = 12
   
-  local item_filters = {
-    {filter = "place-result"},
-    {filter = "hidden", invert = true, mode = "and"},
-    {filter = "place-as-tile", mode = "or"},
-    {filter = "hidden", invert = true, mode = "and"}
-  }
+  local fg_w, fg_h = get_item_placed_size(settings.foreground_item)
+  local bg_w, bg_h = get_item_placed_size(settings.background_item)
+  
+  local fg_filters = get_item_filters_for_size(bg_w, bg_h)
+  local bg_filters = get_item_filters_for_size(fg_w, fg_h)
   
 
   settings_table.add{
@@ -190,7 +233,7 @@ local function open_qr_gui(player)
     type = "choose-elem-button",
     name = "qr_foreground_item",
     elem_type = "item",
-    elem_filters = item_filters
+    elem_filters = fg_filters
   }
   btn_fg.elem_value = settings.foreground_item
   
@@ -203,7 +246,7 @@ local function open_qr_gui(player)
     type = "choose-elem-button",
     name = "qr_background_item",
     elem_type = "item",
-    elem_filters = item_filters
+    elem_filters = bg_filters
   }
   btn_bg.elem_value = settings.background_item
   
@@ -507,44 +550,71 @@ script.on_event(defines.events.on_gui_elem_changed, function(event)
   
   if element.name == "qr_foreground_item" then
     local val = element.elem_value
+    local table_elem = element.parent
+    local bg_btn = table_elem and table_elem.qr_background_item
+    
     if val then
       if not is_valid_blueprint_item(val) then
         player.print({"qr-gui.error-invalid-item", val})
         element.elem_value = nil
+        if bg_btn and bg_btn.valid then
+          bg_btn.elem_filters = get_item_filters_for_size(nil, nil)
+        end
         return
       end
       
-      local table_elem = element.parent
-      local bg_btn = table_elem and table_elem.qr_background_item
-      local bg_val = bg_btn and bg_btn.elem_value
-      if bg_val then
-        local fg_w, fg_h = get_item_placed_size(val)
-        local bg_w, bg_h = get_item_placed_size(bg_val)
-        if fg_w ~= bg_w or fg_h ~= bg_h then
-          player.print({"qr-gui.error-size-mismatch", string.format("%dx%d", fg_w, fg_h), string.format("%dx%d", bg_w, bg_h)})
-          element.elem_value = nil
+      local fg_w, fg_h = get_item_placed_size(val)
+      if bg_btn and bg_btn.valid then
+        bg_btn.elem_filters = get_item_filters_for_size(fg_w, fg_h)
+        
+        local bg_val = bg_btn.elem_value
+        if bg_val then
+          local bg_w, bg_h = get_item_placed_size(bg_val)
+          if fg_w ~= bg_w or fg_h ~= bg_h then
+            player.print({"qr-gui.error-size-mismatch", string.format("%dx%d", fg_w, fg_h), string.format("%dx%d", bg_w, bg_h)})
+            element.elem_value = nil
+            bg_btn.elem_filters = get_item_filters_for_size(nil, nil)
+          end
         end
+      end
+    else
+      if bg_btn and bg_btn.valid then
+        bg_btn.elem_filters = get_item_filters_for_size(nil, nil)
       end
     end
+    
   elseif element.name == "qr_background_item" then
     local val = element.elem_value
+    local table_elem = element.parent
+    local fg_btn = table_elem and table_elem.qr_foreground_item
+    
     if val then
       if not is_valid_blueprint_item(val) then
         player.print({"qr-gui.error-invalid-item", val})
         element.elem_value = nil
+        if fg_btn and fg_btn.valid then
+          fg_btn.elem_filters = get_item_filters_for_size(nil, nil)
+        end
         return
       end
       
-      local table_elem = element.parent
-      local fg_btn = table_elem and table_elem.qr_foreground_item
-      local fg_val = fg_btn and fg_btn.elem_value
-      if fg_val then
-        local fg_w, fg_h = get_item_placed_size(fg_val)
-        local bg_w, bg_h = get_item_placed_size(val)
-        if fg_w ~= bg_w or fg_h ~= bg_h then
-          player.print({"qr-gui.error-size-mismatch", string.format("%dx%d", bg_w, bg_h), string.format("%dx%d", fg_w, fg_h)})
-          element.elem_value = nil
+      local bg_w, bg_h = get_item_placed_size(val)
+      if fg_btn and fg_btn.valid then
+        fg_btn.elem_filters = get_item_filters_for_size(bg_w, bg_h)
+        
+        local fg_val = fg_btn.elem_value
+        if fg_val then
+          local fg_w, fg_h = get_item_placed_size(fg_val)
+          if fg_w ~= bg_w or fg_h ~= bg_h then
+            player.print({"qr-gui.error-size-mismatch", string.format("%dx%d", bg_w, bg_h), string.format("%dx%d", fg_w, fg_h)})
+            element.elem_value = nil
+            fg_btn.elem_filters = get_item_filters_for_size(nil, nil)
+          end
         end
+      end
+    else
+      if fg_btn and fg_btn.valid then
+        fg_btn.elem_filters = get_item_filters_for_size(nil, nil)
       end
     end
   end
