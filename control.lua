@@ -385,16 +385,19 @@ local function generate_qr_blueprint(player, settings)
     bg_width, bg_height = w or 1, h or 1
   end
   
+  local cell_size = scale * math.max(fg_width, bg_width)
   for x = 1, N do
-    local px_base = (x - 1 - half_N) * scale
+    local px_base = (x - 1 - half_N) * cell_size
     for y = 1, N do
-      local py_base = (y - 1 - half_N) * scale
+      local py_base = (y - 1 - half_N) * cell_size
       local is_fg = tab[x][y] > 0
       
       if is_fg then
         if fg_type == "tile" then
-          for dx = 0, scale - 1 do
-            for dy = 0, scale - 1 do
+          for i = 0, scale - 1 do
+            local dx = i * fg_width
+            for j = 0, scale - 1 do
+              local dy = j * fg_height
               table.insert(tiles, {
                 name = fg_name,
                 position = {x = px_base + dx, y = py_base + dy}
@@ -402,8 +405,10 @@ local function generate_qr_blueprint(player, settings)
             end
           end
         elseif fg_type == "entity" then
-          for dx = 0, scale - 1, fg_width do
-            for dy = 0, scale - 1, fg_height do
+          for i = 0, scale - 1 do
+            local dx = i * fg_width
+            for j = 0, scale - 1 do
+              local dy = j * fg_height
               table.insert(entities, {
                 entity_number = entity_idx,
                 name = fg_name,
@@ -418,8 +423,10 @@ local function generate_qr_blueprint(player, settings)
         end
       else
         if bg_type == "tile" then
-          for dx = 0, scale - 1 do
-            for dy = 0, scale - 1 do
+          for i = 0, scale - 1 do
+            local dx = i * bg_width
+            for j = 0, scale - 1 do
+              local dy = j * bg_height
               table.insert(tiles, {
                 name = bg_name,
                 position = {x = px_base + dx, y = py_base + dy}
@@ -427,8 +434,10 @@ local function generate_qr_blueprint(player, settings)
             end
           end
         elseif bg_type == "entity" then
-          for dx = 0, scale - 1, bg_width do
-            for dy = 0, scale - 1, bg_height do
+          for i = 0, scale - 1 do
+            local dx = i * bg_width
+            for j = 0, scale - 1 do
+              local dy = j * bg_height
               table.insert(entities, {
                 entity_number = entity_idx,
                 name = bg_name,
@@ -728,11 +737,21 @@ script.on_event(defines.events.on_player_selected_area, function(event)
     -- Process entities in selection
     for _, ent in ipairs(event.entities) do
       if ent.valid then
-        local pos_x = math.floor(ent.position.x)
-        local pos_y = math.floor(ent.position.y)
-        if grid[pos_x] and grid[pos_x][pos_y] then
-          if ent.prototype.has_flag("player-creation") and not ent.prototype.has_flag("not-blueprintable") then
-            grid[pos_x][pos_y] = ent.name
+        if ent.prototype.has_flag("player-creation") and not ent.prototype.has_flag("not-blueprintable") then
+          local w = ent.prototype.tile_width or 1
+          local h = ent.prototype.tile_height or 1
+          local x_start = math.floor(ent.position.x - w / 2)
+          local y_start = math.floor(ent.position.y - h / 2)
+          for dx = 0, w - 1 do
+            local x = x_start + dx
+            if grid[x] then
+              for dy = 0, h - 1 do
+                local y = y_start + dy
+                if grid[x][y] then
+                  grid[x][y] = ent.name
+                end
+              end
+            end
           end
         end
       end

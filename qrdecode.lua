@@ -594,8 +594,8 @@ function qrdecode.decode(grid, possible_fg_values)
 			local h = y_max - y_min + 1
 			local max_len = math.max(w, h)
 			
-			-- Try scales 1..8
-			for S = 1, 8 do
+			-- Try scales 1..40
+			for S = 1, 40 do
 				local N = math.floor(max_len / S + 0.5)
 				if N >= 21 and N <= 177 and (N - 17) % 4 == 0 then
 					-- Construct matrix for S and N
