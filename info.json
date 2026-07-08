@@ -1,6 +1,6 @@
 {
   "name": "qrcode-blueprint",
-  "version": "1.5.0",
+  "version": "1.5.1",
   "title": "QR Code Blueprint Generator",
   "author": "mketab",
   "homepage": "https://github.com/mketab/qrcode-blueprint",
@@ -8,7 +8,7 @@
   "dependencies": [
     "base >= 2.0.0"
   ],
-  "description": "Presents a text box to the user and creates a QR code blueprint made out of walls from the input text.",
+  "description": "Presents a text box to the user and creates a QR code or Aztec code blueprint from the input text.",
   
   "expansion_required": false,
   "quality_required": false,
