@@ -1,5 +1,7 @@
 local qrencode = require("__qrcode-blueprint__.qrencode")
 local qrdecode = require("__qrcode-blueprint__.qrdecode")
+local aztecencode = require("__qrcode-blueprint__.aztecencode")
+local aztecdecode = require("__qrcode-blueprint__.aztecdecode")
 
 local function is_valid_blueprint_item(item_name)
   if not item_name then return true end
@@ -167,8 +169,12 @@ local function get_player_settings(player_index)
       foreground_item = default_fg,
       background_item = nil,
       scale = 1,
-      text = ""
+      text = "",
+      code_type = "qr"
     }
+  end
+  if not storage.player_settings[player_index].code_type then
+    storage.player_settings[player_index].code_type = "qr"
   end
   return storage.player_settings[player_index]
 end
@@ -193,6 +199,9 @@ local function save_player_settings(player, frame)
     end
     if table_elem.qr_pixel_scale then
       settings.scale = table_elem.qr_pixel_scale.selected_index
+    end
+    if table_elem.qr_code_type then
+      settings.code_type = table_elem.qr_code_type.selected_index == 2 and "aztec" or "qr"
     end
   end
 end
@@ -390,6 +399,17 @@ local function open_qr_gui(player)
   }
   update_pixel_scale_dropdown(settings_table, settings.scale or 1)
   
+  settings_table.add{
+    type = "label",
+    caption = {"qr-gui.code-type"}
+  }
+  settings_table.add{
+    type = "drop-down",
+    name = "qr_code_type",
+    items = {{"qr-gui.code-type-qr"}, {"qr-gui.code-type-aztec"}},
+    selected_index = settings.code_type == "aztec" and 2 or 1
+  }
+  
   local action_flow = content_frame.add{
     type = "flow",
     direction = "horizontal"
@@ -432,6 +452,7 @@ local function generate_qr_blueprint(player, settings)
   local fg_item = settings.foreground_item
   local bg_item = settings.background_item
   local scale = settings.scale or 1
+  local code_type = settings.code_type or "qr"
   
   if not (fg_item or bg_item) then
     player.print({"qr-gui.error-no-selection"})
@@ -465,7 +486,13 @@ local function generate_qr_blueprint(player, settings)
     end
   end
   
-  local ok, tab = qrencode.qrcode(text)
+  local ok, tab
+  if code_type == "aztec" then
+    ok, tab = aztecencode.generate_matrix(text)
+  else
+    ok, tab = qrencode.qrcode(text)
+  end
+  
   if not ok then
     player.print({"qr-gui.error-generating", tostring(tab)})
     return false
@@ -598,7 +625,8 @@ local function generate_qr_blueprint(player, settings)
     cursor_stack.set_blueprint_tiles(tiles)
   end
   
-  cursor_stack.label = "QR: " .. string.sub(text, 1, 30)
+  local prefix = code_type == "aztec" and "Aztec: " or "QR: "
+  cursor_stack.label = prefix .. string.sub(text, 1, 30)
   player.print({"qr-gui.success"})
   return true
 end
@@ -927,6 +955,9 @@ script.on_event(defines.events.on_player_selected_area, function(event)
     
     -- Call the decoder
     local ok, result = qrdecode.decode(grid)
+    if not ok then
+      ok, result = aztecdecode.decode(grid)
+    end
     
     -- Clear the custom selection tool from the cursor
     player.clear_cursor()
