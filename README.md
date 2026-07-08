@@ -6,6 +6,8 @@ A Factorio mod to create and scan QR and Aztec code blueprints.
 
 Useful for sharing links, coordination info, or other data directly on the map.
 
+![QR and Aztec Codes made out of Factorio walls](header.webp)
+
 ## How to use
 
 ### Generating codes
@@ -29,3 +31,4 @@ Otherwise, you can use the built in tile scanner to scan all correct codes:
 ## Attribution
 
 * `qrencode.lua` - Pure Lua QR encoder from https://github.com/speedata/luaqrcode
+* `thumbnail.png` - Mitya Ivanov, Unsplash. 2019.
