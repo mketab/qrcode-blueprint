@@ -4,7 +4,7 @@ _Mod Portal Link_: https://mods.factorio.com/mod/qrcode-blueprint
 
 A Factorio mod to create and scan QR and Aztec code blueprints. 
 
-Useful for sharing links, coordination info, or other data directly on the map.
+Useful for sharing links or other data directly on the map.
 
 ![QR and Aztec Codes made out of Factorio walls](header.webp)
 

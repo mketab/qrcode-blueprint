@@ -3,6 +3,52 @@ local qrdecode = require("__qrcode-blueprint__.qrdecode")
 local aztecencode = require("__qrcode-blueprint__.aztecencode")
 local aztecdecode = require("__qrcode-blueprint__.aztecdecode")
 
+local function get_qr_limit(text)
+  return 2000
+end
+
+local function get_aztec_limit(text)
+  return 1000
+end
+
+local function update_gui_status(frame)
+  local content = frame.content_frame
+  if not content then return end
+  local text_box = content.qr_text_box
+  local char_count_label = content.qr_header_flow and content.qr_header_flow.qr_char_count
+  local table_elem = content.settings_table
+  local generate_btn = content.action_flow and content.action_flow.qr_generate_button
+  
+  if not (text_box and text_box.valid) then return end
+  
+  local code_type = "qr"
+  if table_elem and table_elem.qr_code_type then
+    code_type = table_elem.qr_code_type.selected_index == 2 and "aztec" or "qr"
+  end
+  
+  local text = text_box.text
+  local len = string.len(text)
+  
+  local limit
+  if code_type == "aztec" then
+    limit = get_aztec_limit(text)
+  else
+    limit = get_qr_limit(text)
+  end
+  
+  if char_count_label and char_count_label.valid then
+    if len > limit then
+      char_count_label.caption = {"qr-gui.char-count-error", len, limit}
+    else
+      char_count_label.caption = {"qr-gui.char-count", len, limit}
+    end
+  end
+  
+  if generate_btn and generate_btn.valid then
+    generate_btn.enabled = (len > 0 and len <= limit)
+  end
+end
+
 local function is_valid_blueprint_item(item_name)
   if not item_name then return true end
   local proto = prototypes.item[item_name]
@@ -289,10 +335,23 @@ local function open_qr_gui(player)
   }
   content_frame.style.padding = 12
   
-  content_frame.add{
+  local header_flow = content_frame.add{
+    type = "flow",
+    name = "qr_header_flow",
+    direction = "horizontal"
+  }
+  header_flow.style.vertical_align = "center"
+  
+  header_flow.add{
     type = "label",
     caption = {"qr-gui.enter-text"}
   }
+  
+  local char_count = header_flow.add{
+    type = "label",
+    name = "qr_char_count"
+  }
+  char_count.style.left_margin = 8
   
   local text_box = content_frame.add{
     type = "text-box",
@@ -324,7 +383,7 @@ local function open_qr_gui(player)
     end
   end
   
-  text_box.text = settings.text
+  text_box.text = settings.text or ""
   
   local settings_table = content_frame.add{
     type = "table",
@@ -418,6 +477,7 @@ local function open_qr_gui(player)
   }
   
   player.opened = frame
+  update_gui_status(frame)
 end
 
 local function toggle_qr_gui(player)
@@ -437,6 +497,12 @@ local function generate_qr_blueprint(player, settings)
   local scale = settings.scale or 1
   local code_type = settings.code_type or "qr"
   
+  local limit = (code_type == "aztec" and get_aztec_limit(text) or get_qr_limit(text))
+  if string.len(text) > limit then
+    player.print({"qr-gui.error-text-too-long", limit})
+    return false
+  end
+
   if not (fg_item or bg_item) then
     player.print({"qr-gui.error-no-selection"})
     return false
@@ -769,6 +835,32 @@ script.on_event(defines.events.on_gui_elem_changed, function(event)
       end
     end
     update_pixel_scale_dropdown(table_elem)
+  end
+end)
+
+script.on_event(defines.events.on_gui_text_changed, function(event)
+  local element = event.element
+  if not (element and element.valid) then return end
+  
+  if element.name == "qr_text_box" then
+    local player = game.players[event.player_index]
+    local frame = player.gui.screen.qr_code_frame
+    if frame and frame.valid then
+      update_gui_status(frame)
+    end
+  end
+end)
+
+script.on_event(defines.events.on_gui_selection_state_changed, function(event)
+  local element = event.element
+  if not (element and element.valid) then return end
+  
+  if element.name == "qr_code_type" then
+    local player = game.players[event.player_index]
+    local frame = player.gui.screen.qr_code_frame
+    if frame and frame.valid then
+      update_gui_status(frame)
+    end
   end
 end)
 

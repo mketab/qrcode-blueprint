@@ -1,4 +1,20 @@
 ---------------------------------------------------------------------------------------------------
+Version: 1.5.2
+Date: 2026-07-09
+  Changes:
+    - Limit the text input length to 2000 characters to prevent game freezes when pasting extremely large strings.
+---------------------------------------------------------------------------------------------------
+Version: 1.5.1
+Date: 2026-07-08
+  Changes:
+    - Update info.json and README description to reflect Aztec changes.
+---------------------------------------------------------------------------------------------------
+Version: 1.5.0
+Date: 2026-07-08
+  Changes:
+    - Implement Aztec code encoding and decoding.
+    - Generalize UI strings to 2D matrix codes rather than QR codes.
+---------------------------------------------------------------------------------------------------
 Version: 1.4.1
 Date: 2026-07-07
   Changes:
