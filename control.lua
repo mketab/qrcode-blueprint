@@ -130,33 +130,14 @@ local function are_items_too_similar(fg_item, bg_item)
   return false
 end
 
-local function get_item_filters_for_size(w, h, other_item_name)
-  local list = {}
-  local base_list = get_valid_blueprint_items()
-  
-  for _, name in ipairs(base_list) do
-    local match_size = true
-    if w and h then
-      local item_w, item_h = get_item_placed_size(name)
-      match_size = (item_w == w and item_h == h)
-    end
-    
-    if match_size then
-      if not other_item_name or not are_items_too_similar(name, other_item_name) then
-        table.insert(list, name)
-      end
-    end
-  end
-  
-  if #list == 0 then
-    return {
-      {filter = "name", name = {}}
+local base_item_filters = nil
+local function get_base_item_filters()
+  if not base_item_filters then
+    base_item_filters = {
+      {filter = "name", name = get_valid_blueprint_items()}
     }
   end
-  
-  return {
-    {filter = "name", name = list}
-  }
+  return base_item_filters
 end
 
 local function get_player_settings(player_index)
@@ -244,8 +225,6 @@ local function update_pixel_scale_dropdown(table_elem, initial_scale)
     table.insert(items, string.format("%dx%d", s, s))
   end
   
-  dropdown.items = items
-  
   local target_index = initial_scale or dropdown.selected_index or 1
   if target_index > max_scale then
     target_index = max_scale
@@ -253,6 +232,9 @@ local function update_pixel_scale_dropdown(table_elem, initial_scale)
   if target_index < 1 then
     target_index = 1
   end
+  
+  dropdown.selected_index = 1
+  dropdown.items = items
   dropdown.selected_index = target_index
 end
 
@@ -354,13 +336,6 @@ local function open_qr_gui(player)
   settings_table.style.vertical_spacing = 8
   settings_table.style.horizontal_spacing = 12
   
-  local fg_w, fg_h = get_item_placed_size(settings.foreground_item)
-  local bg_w, bg_h = get_item_placed_size(settings.background_item)
-  
-  local fg_filters = get_item_filters_for_size(bg_w, bg_h, settings.background_item)
-  local bg_filters = get_item_filters_for_size(fg_w, fg_h, settings.foreground_item)
-  
-
   settings_table.add{
     type = "label",
     caption = {"qr-gui.foreground-item"}
@@ -369,7 +344,8 @@ local function open_qr_gui(player)
     type = "choose-elem-button",
     name = "qr_foreground_item",
     elem_type = "item",
-    elem_filters = fg_filters
+    elem_filters = get_base_item_filters(),
+    tooltip = {"qr-gui.foreground-item-tooltip"}
   }
   btn_fg.elem_value = settings.foreground_item
   
@@ -382,7 +358,8 @@ local function open_qr_gui(player)
     type = "choose-elem-button",
     name = "qr_background_item",
     elem_type = "item",
-    elem_filters = bg_filters
+    elem_filters = get_base_item_filters(),
+    tooltip = {"qr-gui.background-item-tooltip"}
   }
   btn_bg.elem_value = settings.background_item
   
@@ -395,7 +372,8 @@ local function open_qr_gui(player)
     type = "drop-down",
     name = "qr_pixel_scale",
     items = {"1x1", "2x2", "3x3", "4x4", "5x5"},
-    selected_index = 1
+    selected_index = 1,
+    tooltip = {"qr-gui.pixel-scale-tooltip"}
   }
   update_pixel_scale_dropdown(settings_table, settings.scale or 1)
   
@@ -407,13 +385,16 @@ local function open_qr_gui(player)
     type = "drop-down",
     name = "qr_code_type",
     items = {{"qr-gui.code-type-qr"}, {"qr-gui.code-type-aztec"}},
-    selected_index = settings.code_type == "aztec" and 2 or 1
+    selected_index = settings.code_type == "aztec" and 2 or 1,
+    tooltip = {"qr-gui.code-type-tooltip"}
   }
   
   local action_flow = content_frame.add{
     type = "flow",
     direction = "horizontal"
   }
+  action_flow.style.horizontal_spacing = 8
+  action_flow.style.top_margin = 12
   
   local action_filler = action_flow.add{
     type = "empty-widget"
@@ -424,14 +405,16 @@ local function open_qr_gui(player)
     type = "button",
     name = "qr_decode_button",
     caption = {"qr-gui.decode-map"},
-    style = "back_button"
+    style = "back_button",
+    tooltip = {"qr-gui.decode-map-tooltip"}
   }
   
   action_flow.add{
     type = "button",
     name = "qr_generate_button",
     caption = {"qr-gui.generate"},
-    style = "confirm_button"
+    style = "confirm_button",
+    tooltip = {"qr-gui.generate-tooltip"}
   }
   
   player.opened = frame
@@ -696,6 +679,7 @@ script.on_event(defines.events.on_gui_click, function(event)
         player.print({"qr-gui.error-no-text"})
       end
     end
+
   elseif element.name == "qr_decoded_close_button" then
     local player = game.players[event.player_index]
     local frame = player.gui.screen.qr_decoded_frame
@@ -735,34 +719,23 @@ script.on_event(defines.events.on_gui_elem_changed, function(event)
       if not is_valid_blueprint_item(val) then
         player.print({"qr-gui.error-invalid-item", val})
         element.elem_value = nil
-        if bg_btn and bg_btn.valid then
-          bg_btn.elem_filters = get_item_filters_for_size(nil, nil, nil)
-        end
         update_pixel_scale_dropdown(table_elem)
         return
       end
       
       local fg_w, fg_h = get_item_placed_size(val)
       if bg_btn and bg_btn.valid then
-        bg_btn.elem_filters = get_item_filters_for_size(fg_w, fg_h, val)
-        
         local bg_val = bg_btn.elem_value
         if bg_val then
           local bg_w, bg_h = get_item_placed_size(bg_val)
           if fg_w ~= bg_w or fg_h ~= bg_h then
-            player.print({"qr-gui.error-size-mismatch", string.format("%dx%d", fg_w, fg_h), string.format("%dx%d", bg_w, bg_h)})
-            element.elem_value = nil
-            bg_btn.elem_filters = get_item_filters_for_size(nil, nil, nil)
+            bg_btn.elem_value = nil
+            player.print({"qr-gui.info-background-cleared-size"})
           elseif are_items_too_similar(val, bg_val) then
-            player.print({"qr-gui.error-too-similar", prototypes.item[val].localised_name, prototypes.item[bg_val].localised_name})
-            element.elem_value = nil
-            bg_btn.elem_filters = get_item_filters_for_size(nil, nil, nil)
+            bg_btn.elem_value = nil
+            player.print({"qr-gui.info-background-cleared-contrast"})
           end
         end
-      end
-    else
-      if bg_btn and bg_btn.valid then
-        bg_btn.elem_filters = get_item_filters_for_size(nil, nil, nil)
       end
     end
     update_pixel_scale_dropdown(table_elem)
@@ -776,34 +749,23 @@ script.on_event(defines.events.on_gui_elem_changed, function(event)
       if not is_valid_blueprint_item(val) then
         player.print({"qr-gui.error-invalid-item", val})
         element.elem_value = nil
-        if fg_btn and fg_btn.valid then
-          fg_btn.elem_filters = get_item_filters_for_size(nil, nil, nil)
-        end
         update_pixel_scale_dropdown(table_elem)
         return
       end
       
       local bg_w, bg_h = get_item_placed_size(val)
       if fg_btn and fg_btn.valid then
-        fg_btn.elem_filters = get_item_filters_for_size(bg_w, bg_h, val)
-        
         local fg_val = fg_btn.elem_value
         if fg_val then
           local fg_w, fg_h = get_item_placed_size(fg_val)
           if fg_w ~= bg_w or fg_h ~= bg_h then
-            player.print({"qr-gui.error-size-mismatch", string.format("%dx%d", bg_w, bg_h), string.format("%dx%d", fg_w, fg_h)})
-            element.elem_value = nil
-            fg_btn.elem_filters = get_item_filters_for_size(nil, nil, nil)
+            fg_btn.elem_value = nil
+            player.print({"qr-gui.info-foreground-cleared-size"})
           elseif are_items_too_similar(val, fg_val) then
-            player.print({"qr-gui.error-too-similar", prototypes.item[val].localised_name, prototypes.item[fg_val].localised_name})
-            element.elem_value = nil
-            fg_btn.elem_filters = get_item_filters_for_size(nil, nil, nil)
+            fg_btn.elem_value = nil
+            player.print({"qr-gui.info-foreground-cleared-contrast"})
           end
         end
-      end
-    else
-      if fg_btn and fg_btn.valid then
-        fg_btn.elem_filters = get_item_filters_for_size(nil, nil, nil)
       end
     end
     update_pixel_scale_dropdown(table_elem)
@@ -876,6 +838,8 @@ local function open_decoded_gui(player, text)
     type = "flow",
     direction = "horizontal"
   }
+  action_flow.style.horizontal_spacing = 8
+  action_flow.style.top_margin = 12
   
   local action_filler = action_flow.add{
     type = "empty-widget"
@@ -897,7 +861,7 @@ script.on_event(defines.events.on_player_selected_area, function(event)
     local player = game.players[event.player_index]
     if not player then return end
     
-    local surface = player.surface
+    local surface = event.surface or player.surface
     local area = event.area
     
     -- Get integer coordinates of selection
@@ -905,6 +869,15 @@ script.on_event(defines.events.on_player_selected_area, function(event)
     local x_max = math.floor(area.right_bottom.x)
     local y_min = math.floor(area.left_top.y)
     local y_max = math.floor(area.right_bottom.y)
+    
+    local width = x_max - x_min + 1
+    local height = y_max - y_min + 1
+    if width > 500 or height > 500 then
+      player.print({"qr-gui.error-selection-too-large"})
+      player.clear_cursor()
+      open_qr_gui(player)
+      return
+    end
     
     -- Scan the area tile by tile
     local grid = {}
