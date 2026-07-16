@@ -1,7 +1,7 @@
-local qrencode = require("__qrcode-blueprint__.qrencode")
-local qrdecode = require("__qrcode-blueprint__.qrdecode")
-local aztecencode = require("__qrcode-blueprint__.aztecencode")
-local aztecdecode = require("__qrcode-blueprint__.aztecdecode")
+local qrencode = require("__qrcode-blueprint__.scripts.qrencode")
+local qrdecode = require("__qrcode-blueprint__.scripts.qrdecode")
+local aztecencode = require("__qrcode-blueprint__.scripts.aztecencode")
+local aztecdecode = require("__qrcode-blueprint__.scripts.aztecdecode")
 
 local function get_qr_limit(text)
   return 2000

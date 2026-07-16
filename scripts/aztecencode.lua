@@ -1,4 +1,4 @@
-local azcommon = require("__qrcode-blueprint__.azteccommon")
+local azcommon = require("__qrcode-blueprint__.scripts.azteccommon")
 
 local aztecencode = {}
 

@@ -1,6 +1,6 @@
 local qrdecode = {}
 
-local qrcommon = require("__qrcode-blueprint__.qrcommon")
+local qrcommon = require("__qrcode-blueprint__.scripts.qrcommon")
 local alpha_int = qrcommon.alpha_int
 local int_alpha = qrcommon.int_alpha
 local alignment_pattern = qrcommon.alignment_pattern

@@ -30,5 +30,5 @@ Otherwise, you can use the built in tile scanner to scan all correct codes:
 
 ## Attribution
 
-* `qrencode.lua` - Pure Lua QR encoder from https://github.com/speedata/luaqrcode
+* `scripts/qrencode.lua` - Pure Lua QR encoder from https://github.com/speedata/luaqrcode
 * `thumbnail.png` - Mitya Ivanov, Unsplash. 2019.

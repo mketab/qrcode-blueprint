@@ -53,7 +53,7 @@ local byte,sub,rep=string.byte,string.sub,string.rep
 local gsub,match,format=string.gsub,string.match,string.format
 local concat = table.concat
 
-local qrcommon = require("__qrcode-blueprint__.qrcommon")
+local qrcommon = require("__qrcode-blueprint__.scripts.qrcommon")
 local alpha_int = qrcommon.alpha_int
 local int_alpha = qrcommon.int_alpha
 local alignment_pattern = qrcommon.alignment_pattern
