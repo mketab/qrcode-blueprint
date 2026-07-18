@@ -1,33 +1,34 @@
 ---------------------------------------------------------------------------------------------------
 Version: 1.5.3
 Date: 2026-07-18
-  Changes:
+  Compatibility:
     - Add optional dependency on tech-tiles.
 ---------------------------------------------------------------------------------------------------
 Version: 1.5.2
 Date: 2026-07-09
-  Changes:
+  Bugfixes:
     - Limit the text input length to 2000 characters to prevent game freezes when pasting extremely large strings.
 ---------------------------------------------------------------------------------------------------
 Version: 1.5.1
 Date: 2026-07-08
-  Changes:
+  Info:
     - Update info.json and README description to reflect Aztec changes.
 ---------------------------------------------------------------------------------------------------
 Version: 1.5.0
 Date: 2026-07-08
-  Changes:
+  Features:
     - Implement Aztec code encoding and decoding.
+  Gui:
     - Generalize UI strings to 2D matrix codes rather than QR codes.
 ---------------------------------------------------------------------------------------------------
 Version: 1.4.1
 Date: 2026-07-07
-  Changes:
+  Info:
     - Add changelog.txt.
 ---------------------------------------------------------------------------------------------------
 Version: 1.4.0
 Date: 2026-07-06
-  Changes:
+  Minor Features:
     - Forbid tiles which would not contrast in the remote view.
     - Require foreground tile.
     - Forbid tiles which require resources underneath them.
@@ -35,36 +36,42 @@ Date: 2026-07-06
 ---------------------------------------------------------------------------------------------------
 Version: 1.3.0
 Date: 2026-07-06
-  Changes:
+  Bugfixes:
     - Fix issue regarding unplaceable blueprints when using large items.
     - Forbid mismatched tiles in selector.
     - Forbid hidden items as valid tiles.
 ---------------------------------------------------------------------------------------------------
 Version: 1.2.0
 Date: 2026-07-06
-  Changes:
+  Features:
     - Implement pure Lua QR code decoder with selection tool.
+  Gui:
     - Reopen GUI when selection tool fails to scan.
+  Bugfixes:
     - Correct matrix indexing for 90 and 270 degree QR code rotations.
+  Changes:
     - Remove qr-pixel-entity mod setting and its references.
+  Scripting:
     - Extract shared QR code lookup tables and functions to a common module.
 ---------------------------------------------------------------------------------------------------
 Version: 1.1.0
 Date: 2026-07-05
-  Changes:
-    - Remember player settings across GUI sessions.
+  Features:
     - Add support for pixel scaling.
     - Support foreground and background item selection.
+  Gui:
+    - Remember player settings across GUI sessions.
+  Translation:
     - Localize GUI and error messages.
+  Control:
     - Add hotkey support.
 ---------------------------------------------------------------------------------------------------
 Version: 1.0.1
 Date: 2026-07-04
-  Changes:
+  Features:
     - Support multi-tile entities in QR code generation.
 ---------------------------------------------------------------------------------------------------
 Version: 1.0.0
 Date: 2026-07-04
-  Changes:
+  Major Features:
     - Initial release.
----------------------------------------------------------------------------------------------------
