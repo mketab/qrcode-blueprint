@@ -20,7 +20,7 @@ Useful for sharing links or other data directly on the map.
 
 ### Scanning in-game
 
-You can scan via the map view using a real-world phone scanner. *Very rarely* can external code scanners (like your phone camera) scan the tiles themselves, but the map view is much clearer.
+You can scan via the map view using a real-world phone scanner. *Very rarely* can external code scanners (like your phone camera) scan vanilla tiles themselves, but the map view is much clearer.
 
 Otherwise, you can use the built in tile scanner to scan all correct codes:
 
