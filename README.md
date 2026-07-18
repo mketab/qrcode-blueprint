@@ -6,7 +6,7 @@ A Factorio mod to create and scan QR and Aztec code blueprints.
 
 Useful for sharing links or other data directly on the map.
 
-![QR and Aztec Codes made out of Factorio walls](header.webp)
+![QR and Aztec Codes linking to the mod portal page surrounded by trees.](header.webp)
 
 ## How to use
 
@@ -20,13 +20,17 @@ Useful for sharing links or other data directly on the map.
 
 ### Scanning in-game
 
-You can scan via the map view using a real-world phone scanner. *Very rarely* can code scanners scan the tiles themselves, but the map view is much clearer.
+You can scan via the map view using a real-world phone scanner. *Very rarely* can external code scanners (like your phone camera) scan the tiles themselves, but the map view is much clearer.
 
 Otherwise, you can use the built in tile scanner to scan all correct codes:
 
 1. Click Scan Map in the GUI to get the Decoder selection tool.
-2. Drag the selection box over any physical QR or Aztec code (remote view is not supported atm).
+2. Drag the selection box over any physical QR or Aztec code (remote view is supported).
 3. The decoded text will display in a popup.
+
+## Recommended Mods
+
+* [Technicolor Lab Tiles](https://mods.factorio.com/mod/tech-tiles) for high-contrast QR codes that are scannable as tiles from external code scanners.  
 
 ## Attribution
 
