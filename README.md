@@ -11,21 +11,21 @@ Useful for sharing links or other data directly on the map.
 ## How to use
 
 ### Generating codes
-1. Click the QR code shortcut button in your shortcut bar, or press `Ctrl + Alt + Q`.
-2. Type your text.
-3. Choose your foreground and (optional) background items (must be the same size).
+1. Click the QR code shortcut button or press `Ctrl + Alt + Q`.
+2. Type or paste your text.
+3. Choose foreground and optional background items (must be the same size).
 4. (Optional) Choose a pixel scale (e.g. 2x2).
 5. (Optional) Choose the code type (QR Code or Aztec Code).
 6. Click Generate and place the blueprint.
 
 ### Scanning in-game
 
-You can scan via the map view using a real-world phone scanner. *Very rarely* can external code scanners (like your phone camera) scan vanilla tiles themselves, but the map view is much clearer.
+You can scan codes using a phone camera. Vanilla tiles rarely scan directly, but the map view is much clearer.
 
-Otherwise, you can use the built in tile scanner to scan all correct codes:
+Otherwise, use the built-in decoder tool to scan in-game:
 
-1. Click Scan Map in the GUI to get the Decoder selection tool.
-2. Drag the selection box over any physical QR or Aztec code (remote view is supported).
+1. Click **Scan Map** in the GUI to get the decoder selection tool.
+2. Drag the selection box over any QR or Aztec code (remote view is supported).
 3. The decoded text will display in a popup.
 
 ## Recommended Mods
