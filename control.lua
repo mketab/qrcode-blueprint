@@ -677,9 +677,10 @@ local function generate_qr_blueprint(player, settings)
   cursor_stack.blueprint_absolute_snapping = true
   cursor_stack.blueprint_position_relative_to_grid = {x = 0, y = 0}
   
+  local truncated_text = #text > 30 and (string.sub(text, 1, 30) .. "...") or text
   local prefix = code_type == "aztec" and "Aztec: " or "QR: "
-  cursor_stack.label = prefix .. string.sub(text, 1, 30)
-  cursor_stack.blueprint_description = text
+  cursor_stack.label = prefix .. truncated_text
+  cursor_stack.blueprint_description = truncated_text
   player.print({"qr-gui.success"})
   return true
 end
