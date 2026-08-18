@@ -562,7 +562,6 @@ local function generate_qr_blueprint(player, settings)
   local entities = {}
   local tiles = {}
   local N = #tab
-  local half_N = math.floor(N / 2)
   local entity_idx = 1
   
 
@@ -600,9 +599,9 @@ local function generate_qr_blueprint(player, settings)
   
   local cell_size = scale * math.max(fg_width, bg_width)
   for x = 1, N do
-    local px_base = (x - 1 - half_N) * cell_size
+    local px_base = (x - 1) * cell_size
     for y = 1, N do
-      local py_base = (y - 1 - half_N) * cell_size
+      local py_base = (y - 1) * cell_size
       local is_fg = tab[x][y] > 0
       
       if is_fg then
@@ -673,6 +672,10 @@ local function generate_qr_blueprint(player, settings)
   if #tiles > 0 then
     cursor_stack.set_blueprint_tiles(tiles)
   end
+  
+  cursor_stack.blueprint_snap_to_grid = {x = N * cell_size, y = N * cell_size}
+  cursor_stack.blueprint_absolute_snapping = true
+  cursor_stack.blueprint_position_relative_to_grid = {x = 0, y = 0}
   
   local prefix = code_type == "aztec" and "Aztec: " or "QR: "
   cursor_stack.label = prefix .. string.sub(text, 1, 30)

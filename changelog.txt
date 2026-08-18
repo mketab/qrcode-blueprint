@@ -1,4 +1,10 @@
 ---------------------------------------------------------------------------------------------------
+Version: 1.5.4
+Date: 2026-08-18
+  Features:
+    - Default to global grid snapping for generated blueprints.
+    - Set blueprint description to the input text.
+---------------------------------------------------------------------------------------------------
 Version: 1.5.3
 Date: 2026-07-18
   Compatibility:
