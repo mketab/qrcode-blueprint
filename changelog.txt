@@ -1,4 +1,10 @@
 ---------------------------------------------------------------------------------------------------
+Version: 1.5.5
+Date: 2026-08-18
+  Bugfixes:
+    - Further restrict non-blueprintable items which were showing in the picker (construction bots).
+    - Truncate blueprint description early to avoid Factorio truncation misunderstandings.
+---------------------------------------------------------------------------------------------------
 Version: 1.5.4
 Date: 2026-08-18
   Features:

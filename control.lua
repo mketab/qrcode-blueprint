@@ -59,10 +59,35 @@ local function is_valid_blueprint_item(item_name)
     if ent_proto.tile_width ~= ent_proto.tile_height then
       return false
     end
+    
+    if not ent_proto.has_flag("player-creation")
+       or ent_proto.has_flag("not-blueprintable")
+       or ent_proto.has_flag("placeable-off-grid") then
+      return false
+    end
+    
+    -- Exclude entities with placement constraints (mining drills and offshore pumps)
     if ent_proto.type == "mining-drill" or ent_proto.type == "offshore-pump" then
       return false
     end
-    return ent_proto.has_flag("player-creation") and not ent_proto.has_flag("not-blueprintable")
+
+    if game then
+      local inv = game.create_inventory(1)
+      if inv then
+        inv[1].set_stack({name = "blueprint", count = 1})
+        local ok = pcall(function()
+          inv[1].set_blueprint_entities({{
+            entity_number = 1,
+            name = ent_proto.name,
+            position = {x = 0.5, y = 0.5}
+          }})
+        end)
+        inv.destroy()
+        if not ok then return false end
+      end
+    end
+    
+    return true
   end
   
   if proto.place_as_tile_result then
@@ -667,10 +692,18 @@ local function generate_qr_blueprint(player, settings)
   end
   
   if #entities > 0 then
-    cursor_stack.set_blueprint_entities(entities)
+    local ok, err = pcall(function() cursor_stack.set_blueprint_entities(entities) end)
+    if not ok then
+      player.print({"qr-gui.error-generating", err or "Invalid blueprint entities"})
+      return false
+    end
   end
   if #tiles > 0 then
-    cursor_stack.set_blueprint_tiles(tiles)
+    local ok, err = pcall(function() cursor_stack.set_blueprint_tiles(tiles) end)
+    if not ok then
+      player.print({"qr-gui.error-generating", err or "Invalid blueprint tiles"})
+      return false
+    end
   end
   
   cursor_stack.blueprint_snap_to_grid = {x = N * cell_size, y = N * cell_size}
