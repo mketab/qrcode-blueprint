@@ -676,6 +676,7 @@ local function generate_qr_blueprint(player, settings)
   
   local prefix = code_type == "aztec" and "Aztec: " or "QR: "
   cursor_stack.label = prefix .. string.sub(text, 1, 30)
+  cursor_stack.blueprint_description = text
   player.print({"qr-gui.success"})
   return true
 end
