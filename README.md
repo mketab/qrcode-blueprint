@@ -1,5 +1,8 @@
 # qrcode-blueprint
 
+[![Publish Factorio Mod](https://img.shields.io/github/actions/workflow/status/mketab/qrcode-blueprint/publish.yml)](https://github.com/mketab/qrcode-blueprint/actions/workflows/publish.yml)
+[![Unique Users](https://img.shields.io/badge/dynamic/json?label=unique%20users&query=%24.downloads_count&url=https%3A%2F%2Fmods.factorio.com%2Fapi%2Fmods%2Fqrcode-blueprint)](https://mods.factorio.com/mod/qrcode-blueprint)
+
 _Mod Portal Link_: https://mods.factorio.com/mod/qrcode-blueprint
 
 A Factorio mod to create and scan QR and Aztec code blueprints. 
