@@ -1018,12 +1018,45 @@ script.on_event(defines.events.on_player_selected_area, function(event)
       end
     end
     
-    -- Process entities in selection
+    -- 1. Process built surface tiles
+    for x = x_min, x_max do
+      for y = y_min, y_max do
+        local tile = surface.get_tile(x, y)
+        if tile and tile.valid then
+          local name = tile.name
+          if name:find("concrete") or name:find("path") or name:find("brick") or name:find("asphalt") or name:find("floor") or name:find("tile") then
+            grid[x][y] = name
+          end
+        end
+      end
+    end
+
+    -- 2. Process tile ghosts (unbuilt blueprint tiles)
     for _, ent in ipairs(event.entities) do
-      if ent.valid then
-        if ent.prototype.has_flag("player-creation") and not ent.prototype.has_flag("not-blueprintable") then
-          local w = ent.prototype.tile_width or 1
-          local h = ent.prototype.tile_height or 1
+      if ent.valid and ent.type == "tile-ghost" then
+        local x = math.floor(ent.position.x)
+        local y = math.floor(ent.position.y)
+        if grid[x] and grid[x][y] ~= nil then
+          grid[x][y] = ent.ghost_name
+        end
+      end
+    end
+
+    -- 3. Process entities and entity ghosts (built entities & unbuilt blueprint entities)
+    for _, ent in ipairs(event.entities) do
+      if ent.valid and ent.type ~= "tile-ghost" then
+        local name, proto
+        if ent.type == "entity-ghost" then
+          name = ent.ghost_name
+          proto = ent.ghost_prototype
+        else
+          name = ent.name
+          proto = ent.prototype
+        end
+
+        if proto and proto.has_flag("player-creation") and not proto.has_flag("not-blueprintable") then
+          local w = proto.tile_width or 1
+          local h = proto.tile_height or 1
           local x_start = math.floor(ent.position.x - w / 2)
           local y_start = math.floor(ent.position.y - h / 2)
           for dx = 0, w - 1 do
@@ -1031,25 +1064,10 @@ script.on_event(defines.events.on_player_selected_area, function(event)
             if grid[x] then
               for dy = 0, h - 1 do
                 local y = y_start + dy
-                if grid[x][y] then
-                  grid[x][y] = ent.name
+                if grid[x][y] ~= nil then
+                  grid[x][y] = name
                 end
               end
-            end
-          end
-        end
-      end
-    end
-    
-    -- Process tiles in selection
-    for x = x_min, x_max do
-      for y = y_min, y_max do
-        if grid[x][y] == "" then
-          local tile = surface.get_tile(x, y)
-          if tile and tile.valid then
-            local name = tile.name
-            if name:find("concrete") or name:find("path") or name:find("brick") or name:find("asphalt") or name:find("floor") or name:find("tile") then
-              grid[x][y] = name
             end
           end
         end
