@@ -1,0 +1,48 @@
+[tools]
+uv = "latest"
+stylua = "latest"
+"aqua:Kampfkarren/selene" = "latest"
+
+[env]
+_.file = ".env"
+
+[tasks.fmt]
+description = "Format Lua source code using StyLua"
+run = "stylua ."
+
+[tasks.fmt-check]
+description = "Check Lua source code formatting using StyLua"
+run = "stylua --check ."
+
+[tasks.lint]
+description = "Lint Lua source code using Selene"
+run = "selene ."
+
+[tasks.check]
+description = "Validate info.json, changelog.txt, git repository state, and Lua code quality"
+depends = ["fmt-check", "lint"]
+run = "uv run build.py check"
+
+[tasks.build]
+description = "Build Factorio mod ZIP artifact"
+depends = ["check"]
+run = "uv run build.py build"
+
+[tasks.upload]
+description = "Upload mod to Factorio Mod Portal (requires clean git state & tag)"
+depends = ["build"]
+run = "uv run build.py upload"
+
+[tasks.release]
+description = "Create and push git tag matching info.json version (CI uploads to Factorio Mod Portal)"
+depends = ["check"]
+run = "uv run build.py release"
+
+[tasks.link]
+description = "Symlink mod to local Factorio mods directory for testing"
+run = "uv run build.py link"
+
+[tasks.unlink]
+description = "Remove mod symlink from local Factorio mods directory"
+run = "uv run build.py unlink"
+

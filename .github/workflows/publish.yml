@@ -2,27 +2,22 @@ name: Publish Factorio Mod
 
 on:
   workflow_dispatch:
+  push:
+    tags:
+      - 'v*'
 
 jobs:
   publish:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
 
-      - name: Publish mod
+      - uses: astral-sh/setup-uv@v5
+
+      - name: Publish mod via uv
         env:
           FACTORIO_API_KEY: ${{ secrets.FACTORIO_API_KEY }}
-        run: |
-          NAME=$(jq -r .name info.json)
-          VERSION=$(jq -r .version info.json)
-          DIR="${NAME}_${VERSION}"
-          TMP_DIR=$(mktemp -d)
-          mkdir -p "$TMP_DIR/$DIR"
-          rsync -a --exclude-from=.factorioignore ./ "$TMP_DIR/$DIR/"
-          (cd "$TMP_DIR" && zip -r "$DIR.zip" "$DIR")
-          UPLOAD_URL=$(curl -sf -X POST "https://mods.factorio.com/api/v2/mods/releases/init_upload" \
-            -H "Authorization: Bearer $FACTORIO_API_KEY" \
-            -F "mod=$NAME" | jq -r .upload_url)
-          curl -sf -X POST "$UPLOAD_URL" \
-            -H "Authorization: Bearer $FACTORIO_API_KEY" \
-            -F "file=@$TMP_DIR/$DIR.zip"
+          ALLOW_UNTAGGED: ${{ github.event_name == 'workflow_dispatch' && '1' || '0' }}
+        run: uv run build.py upload
