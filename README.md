@@ -1,6 +1,7 @@
 # qrcode-blueprint
 
 [![Publish Factorio Mod](https://img.shields.io/github/actions/workflow/status/mketab/qrcode-blueprint/publish.yml?labelColor=24272b&style=flat-square)](https://github.com/mketab/qrcode-blueprint/actions/workflows/publish.yml)
+[![Mod Version](https://img.shields.io/factorio-mod-portal/v/qrcode-blueprint?label=version&color=e06c00&labelColor=24272b&style=flat-square)](https://mods.factorio.com/mod/qrcode-blueprint)
 [![Unique Users](https://img.shields.io/factorio-mod-portal/dt/qrcode-blueprint?label=unique%20users&color=e06c00&labelColor=24272b&style=flat-square)](https://mods.factorio.com/mod/qrcode-blueprint)
 
 _Mod Portal Link_: https://mods.factorio.com/mod/qrcode-blueprint
